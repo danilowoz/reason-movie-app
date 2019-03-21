@@ -44,7 +44,7 @@ let getList = "https://api.themoviedb.org/3/genre/movie/list?api_key=cee134a9d53
 
 let component = ReasonReact.reducerComponent("Genres");
 
-let make = _children => {
+let make = (~getId, _children) => {
   ...component,
   initialState: _state => {pageState: Loading, selectedId: 0},
   reducer: (action, _state) =>
@@ -74,19 +74,22 @@ let make = _children => {
     | GenreFetched(listGenre) =>
       ReasonReact.Update({..._state, pageState: Loaded(listGenre)})
     | GenreFailedToFetch => ReasonReact.Update({..._state, pageState: Error})
-    | HandleId(id) => ReasonReact.Update({..._state, selectedId: id})
+    | HandleId(id) =>
+      ReasonReact.UpdateWithSideEffects(
+        {..._state, selectedId: id},
+        (self => getId(self.state.selectedId)),
+      )
     },
   didMount: self => self.send(GenreFetch),
   render: self =>
     <div>
-      <h1> {ReasonReact.string(string_of_int(self.state.selectedId))} </h1>
+      <h1> {ReasonReact.string("Genres")} </h1>
       {
         switch (self.state.pageState) {
         | Error => <div> {ReasonReact.string("An error occurred!")} </div>
         | Loading => <div> {ReasonReact.string("Loading...")} </div>
         | Loaded(listGenre) =>
           <div>
-            <h1> {ReasonReact.string("Genres")} </h1>
             {
               Array.map(listGenre, g =>
                 <button

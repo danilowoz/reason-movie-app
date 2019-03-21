@@ -30,7 +30,7 @@ var getList = "https://api.themoviedb.org/3/genre/movie/list?api_key=cee134a9d53
 
 var component = ReasonReact.reducerComponent("Genres");
 
-function make(_children) {
+function make(getId, _children) {
   return /* record */[
           /* debugName */component[/* debugName */0],
           /* reactClassInternal */component[/* reactClassInternal */1],
@@ -45,9 +45,9 @@ function make(_children) {
           /* shouldUpdate */component[/* shouldUpdate */8],
           /* render */(function (self) {
               var match = self[/* state */1][/* pageState */0];
-              return React.createElement("div", undefined, React.createElement("h1", undefined, String(self[/* state */1][/* selectedId */1])), typeof match === "number" ? (
+              return React.createElement("div", undefined, React.createElement("h1", undefined, "Genres"), typeof match === "number" ? (
                             match !== 0 ? React.createElement("div", undefined, "An error occurred!") : React.createElement("div", undefined, "Loading...")
-                          ) : React.createElement("div", undefined, React.createElement("h1", undefined, "Genres"), Belt_Array.map(match[0], (function (g) {
+                          ) : React.createElement("div", undefined, Belt_Array.map(match[0], (function (g) {
                                       return React.createElement("button", {
                                                   key: String(g[/* id */0]),
                                                   onClick: (function (_e) {
@@ -91,10 +91,15 @@ function make(_children) {
                             ]]);
                 }
               } else if (action.tag) {
-                return /* Update */Block.__(0, [/* record */[
+                return /* UpdateWithSideEffects */Block.__(2, [
+                          /* record */[
                             /* pageState */_state[/* pageState */0],
                             /* selectedId */action[0]
-                          ]]);
+                          ],
+                          (function (self) {
+                              return Curry._1(getId, self[/* state */1][/* selectedId */1]);
+                            })
+                        ]);
               } else {
                 return /* Update */Block.__(0, [/* record */[
                             /* pageState : Loaded */[action[0]],

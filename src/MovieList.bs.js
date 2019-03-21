@@ -9,31 +9,31 @@ var Json_decode = require("@glennsl/bs-json/src/Json_decode.bs.js");
 var ReasonReact = require("reason-react/src/ReasonReact.js");
 var Genres$ReactTemplate = require("./Genres.bs.js");
 
-function genre(json) {
-  return /* record */[
-          /* id */Json_decode.field("id", Json_decode.$$int, json),
-          /* name */Json_decode.field("name", Json_decode.string, json)
-        ];
-}
-
 function movie(json) {
-  var __x = Json_decode.field("genres", (function (param) {
-          return Json_decode.array(genre, param);
+  var __x = Json_decode.field("genre_ids", (function (param) {
+          return Json_decode.array(Json_decode.$$int, param);
         }), json);
   return /* record */[
           /* title */Json_decode.field("original_title", Json_decode.string, json),
           /* genres */Belt_Array.map(__x, (function (g) {
-                  return g[/* name */1];
-                }))
+                  return g;
+                })),
+          /* image */Json_decode.field("poster_path", Json_decode.string, json)
         ];
 }
 
+function listMovie(json) {
+  return Json_decode.field("results", (function (param) {
+                return Json_decode.array(movie, param);
+              }), json);
+}
+
 var Decode = /* module */[
-  /* genre */genre,
-  /* movie */movie
+  /* movie */movie,
+  /* listMovie */listMovie
 ];
 
-var searchUrl = "https://api.themoviedb.org/3/movie/76341?api_key=cee134a9d530ca1dc02dd7058c66352f";
+var searchUrl = "https://api.themoviedb.org/3/discover/movie?api_key=cee134a9d530ca1dc02dd7058c66352f";
 
 var component = ReasonReact.reducerComponent("MovieList");
 
@@ -51,37 +51,49 @@ function make(_children) {
           /* willUpdate */component[/* willUpdate */7],
           /* shouldUpdate */component[/* shouldUpdate */8],
           /* render */(function (self) {
-              var match = self[/* state */1];
-              var tmp;
-              if (typeof match === "number") {
-                tmp = match !== 0 ? React.createElement("div", undefined, "An error occurred!") : React.createElement("div", undefined, "Loading...");
-              } else {
-                var movie = match[0];
-                tmp = React.createElement("div", undefined, React.createElement("h1", undefined, "Movie"), movie[/* title */0], React.createElement("ul", undefined, Belt_Array.map(movie[/* genres */1], (function (g) {
-                                return React.createElement("p", {
-                                            key: g
-                                          }, g);
-                              }))));
-              }
-              return React.createElement("div", undefined, ReasonReact.element(undefined, undefined, Genres$ReactTemplate.make(/* array */[])), tmp);
+              var match = self[/* state */1][/* pageState */0];
+              return React.createElement("div", undefined, ReasonReact.element(undefined, undefined, Genres$ReactTemplate.make((function (id) {
+                                    return Curry._1(self[/* send */3], /* HandleId */Block.__(1, [id]));
+                                  }), /* array */[])), typeof match === "number" ? (
+                            match !== 0 ? React.createElement("div", undefined, "An error occurred!") : React.createElement("div", undefined, "Loading...")
+                          ) : React.createElement("div", undefined, React.createElement("h1", undefined, "Movie"), React.createElement("ul", undefined, Belt_Array.map(match[0], (function (movie) {
+                                          return React.createElement("div", {
+                                                      style: {
+                                                        display: "inline-block",
+                                                        verticalAlign: "top",
+                                                        width: "200px"
+                                                      }
+                                                    }, React.createElement("img", {
+                                                          src: "https://image.tmdb.org/t/p/w500/" + movie[/* image */2],
+                                                          width: "150px"
+                                                        }), React.createElement("p", {
+                                                          key: movie[/* title */0]
+                                                        }, movie[/* title */0]));
+                                        })))));
             }),
           /* initialState */(function (_state) {
-              return /* Loading */0;
+              return /* record */[
+                      /* pageState : Loading */0,
+                      /* selectedId */0
+                    ];
             }),
           /* retainedProps */component[/* retainedProps */11],
           /* reducer */(function (action, _state) {
               if (typeof action === "number") {
-                if (action !== 0) {
-                  return /* Update */Block.__(0, [/* Error */1]);
-                } else {
+                if (action === 0) {
                   return /* UpdateWithSideEffects */Block.__(2, [
-                            /* Loading */0,
+                            /* record */[
+                              /* pageState : Loading */0,
+                              /* selectedId */_state[/* selectedId */1]
+                            ],
                             (function (self) {
-                                fetch(searchUrl).then((function (prim) {
+                                var hasId = self[/* state */1][/* selectedId */1] !== 0;
+                                var url = hasId ? searchUrl + ("&with_genres=" + String(self[/* state */1][/* selectedId */1])) : searchUrl;
+                                fetch(url).then((function (prim) {
                                             return prim.json();
                                           })).then((function (json) {
-                                          var movie$1 = movie(json);
-                                          return Promise.resolve(Curry._1(self[/* send */3], /* MovieFetched */[movie$1]));
+                                          var listMovie$1 = listMovie(json);
+                                          return Promise.resolve(Curry._1(self[/* send */3], /* MovieFetched */Block.__(0, [listMovie$1])));
                                         })).catch((function (_err) {
                                         console.log(_err);
                                         return Promise.resolve(Curry._1(self[/* send */3], /* MovieFailedToFetch */1));
@@ -89,9 +101,27 @@ function make(_children) {
                                 return /* () */0;
                               })
                           ]);
+                } else {
+                  return /* Update */Block.__(0, [/* record */[
+                              /* pageState : Error */1,
+                              /* selectedId */_state[/* selectedId */1]
+                            ]]);
                 }
+              } else if (action.tag) {
+                return /* UpdateWithSideEffects */Block.__(2, [
+                          /* record */[
+                            /* pageState */_state[/* pageState */0],
+                            /* selectedId */action[0]
+                          ],
+                          (function (self) {
+                              return Curry._1(self[/* send */3], /* MovieFetch */0);
+                            })
+                        ]);
               } else {
-                return /* Update */Block.__(0, [/* Loaded */[action[0]]]);
+                return /* Update */Block.__(0, [/* record */[
+                            /* pageState : Loaded */[action[0]],
+                            /* selectedId */_state[/* selectedId */1]
+                          ]]);
               }
             }),
           /* jsElementWrapped */component[/* jsElementWrapped */13]
